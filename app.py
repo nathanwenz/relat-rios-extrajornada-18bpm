@@ -88,7 +88,6 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for chaves, grupo in df.groupby(group_cols if group_cols else df.columns):
-        # Correção da linha que gerava o erro
         primeiro = grupo.iloc[0]
         
         volcher_val = str(primeiro.get(col_v, "")).strip() if col_v else ""
@@ -161,4 +160,3 @@ if arquivo:
             st.download_button("📥 Baixar Relatório Preenchido (.docx)", docx_bytes, "RELATORIO_EXTRAJORNADA.docx")
     else:
         st.error("Não foi possível extrair dados da tabela. Verifique o arquivo enviado.")
-Role a página e clique no botão verde "Commit changes".
