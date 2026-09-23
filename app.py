@@ -9,6 +9,33 @@ from docx.oxml.ns import qn
 import io
 import pdfplumber
 
+# 🔒 CONFIGURAÇÃO DA SENHA DE ACESSO (Altere aqui se desejar)
+SENHA_CORRETA = "deusa"
+
+# Controle de sessão do usuário
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+
+# Tela de Login caso o usuário não esteja autenticado
+if not st.session_state.autenticado:
+    st.title("🔒 Acesso Restrito — 18º BPM")
+    st.write("Digite a senha de acesso para utilizar o Gerador de Relatórios Extrajornada.")
+    
+    senha_input = st.text_input("Senha de acesso:", type="password")
+    
+    if st.button("Entrar"):
+        if senha_input == SENHA_CORRETA:
+            st.session_state.autenticado = True
+            st.success("Acesso liberado!")
+            st.rerun()
+        else:
+            st.error("Senha incorreta! Verifique e tente novamente.")
+    st.stop()
+
+# =========================================================
+# CÓDIGO DO SISTEMA (Liberado apenas após a senha)
+# =========================================================
+
 def set_cell_background(cell, hex_color):
     tcPr = cell._tc.get_or_add_tcPr()
     shd = OxmlElement('w:shd')
@@ -60,7 +87,6 @@ def processar_dataframe(df):
 def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta-feira)"):
     doc = Document()
 
-    # Configuração de Margens
     for section in doc.sections:
         section.top_margin = Inches(0.6)
         section.bottom_margin = Inches(0.6)
@@ -82,7 +108,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     r_prog.bold = True
     r_prog.font.size = Pt(12)
     r_prog.font.name = "Arial"
-    r_prog.font.color.rgb = RGBColor(0, 32, 96) # Azul Escuro PM
+    r_prog.font.color.rgb = RGBColor(0, 32, 96)
 
     p_data = doc.add_paragraph()
     p_data.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -135,7 +161,6 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         for i, (label, val) in enumerate(campos):
             r = table.rows[i]
             
-            # Célula Rótulo (Azul Claro PM)
             c0 = r.cells[0]
             p0 = c0.paragraphs[0]
             p0.paragraph_format.space_after = Pt(2)
@@ -146,7 +171,6 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r0.font.size = Pt(10)
             set_cell_background(c0, "D9E1F2")
 
-            # Célula Valor (Branco limpo, sem amarelo)
             c1 = r.cells[1]
             p1 = c1.paragraphs[0]
             p1.paragraph_format.space_after = Pt(2)
@@ -157,7 +181,6 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r1.font.size = Pt(10)
             set_cell_background(c1, "FFFFFF")
 
-        # Texto de observação sem marcas em amarelo
         r4 = table.rows[4]
         c0 = r4.cells[0]
         c1 = r4.cells[1]
@@ -193,6 +216,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     buffer.seek(0)
     return buffer
 
+# Interface Principal
 st.title("🛡️ Gerador de Relatório Extrajornada PM")
 st.write("Envie a tabela da escala em **.pdf**, **.xlsx** ou **.csv**.")
 
