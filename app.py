@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_COLOR_INDEX
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -104,7 +104,6 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for group_idx, (chaves, grupo) in enumerate(df.groupby(group_cols if group_cols else df.columns)):
-        # Correção exata: iloc[0] pega a primeira linha do grupo
         primeiro = grupo.iloc[0]
         
         volcher_raw = str(primeiro.get(col_v, "")).replace('.0', '').replace('None', '').replace('nan', '').strip() if col_v else ""
@@ -127,13 +126,13 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             row.cells[1].width = Inches(4.5)
 
         campos = [
-            ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}", True), # Destacado em Amarelo
-            ("DATA", data_str, False),
-            ("LOCAL", cidade_val, True), # Destacado em Amarelo
-            ("HORÁRIO", hora_str, False)
+            ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}"),
+            ("DATA", data_str),
+            ("LOCAL", cidade_val),
+            ("HORÁRIO", hora_str)
         ]
 
-        for i, (label, val, highlighted) in enumerate(campos):
+        for i, (label, val) in enumerate(campos):
             r = table.rows[i]
             
             # Célula Rótulo (Azul Claro PM)
@@ -147,22 +146,18 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r0.font.size = Pt(10)
             set_cell_background(c0, "D9E1F2")
 
-            # Célula Valor (Amarelo Grifado ou Branco)
+            # Célula Valor (Branco sem grifado)
             c1 = r.cells[1]
             p1 = c1.paragraphs[0]
             p1.paragraph_format.space_after = Pt(2)
             p1.paragraph_format.space_before = Pt(2)
             r1 = p1.add_run(val)
-            r1.bold = True if highlighted else False
+            r1.bold = True if label in ["CIDADE/VOLCHER", "LOCAL"] else False
             r1.font.name = "Arial"
             r1.font.size = Pt(10)
-            
-            if highlighted:
-                set_cell_background(c1, "FFFF00") # Grifado Amarelo
-            else:
-                set_cell_background(c1, "FFFFFF")
+            set_cell_background(c1, "FFFFFF")
 
-        # Texto fixo de observação simplificado
+        # Texto fixo de observação com os tópicos solicitados
         r4 = table.rows[4]
         c0 = r4.cells[0]
         c1 = r4.cells[1]
@@ -170,10 +165,26 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         p_obs_tbl = c0.paragraphs[0]
         p_obs_tbl.paragraph_format.space_after = Pt(3)
         p_obs_tbl.paragraph_format.space_before = Pt(3)
-        r_obs_tbl = p_obs_tbl.add_run("A equipe ficará a Disposição do COPOM e CPU ou Adjunto. | SISGCOP 61076")
-        r_obs_tbl.bold = True
-        r_obs_tbl.font.name = "Arial"
-        r_obs_tbl.font.size = Pt(9)
+        p_obs_tbl.paragraph_format.line_spacing = 1.15
+
+        r_l1 = p_obs_tbl.add_run("A equipe ficará a Disposição do COPOM e CPU ou Adjunto.\n")
+        r_l1.font.name = "Arial"
+        r_l1.font.size = Pt(9.5)
+
+        r_l2 = p_obs_tbl.add_run("SISGCOP 61076\n")
+        r_l2.bold = True
+        r_l2.font.name = "Arial"
+        r_l2.font.size = Pt(9.5)
+
+        r_l3 = p_obs_tbl.add_run("    • Equipe deverá fazer contato com o Adjunto ao assumir serviço.\n")
+        r_l3.font.name = "Arial"
+        r_l3.font.size = Pt(9.5)
+
+        r_l4 = p_obs_tbl.add_run("    • A equipe além realizar o atendimento de ocorrências, deverá realizar o Patrulhamento Ostensivo e Preventivo na área designada para atuar.")
+        r_l4.font.name = "Arial"
+        r_l4.font.size = Pt(9.5)
+        r_l4.font.highlight_color = WD_COLOR_INDEX.YELLOW
+
         set_cell_background(c0, "FAFAFA")
 
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
