@@ -49,8 +49,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# 🏷️ ASSINATURA NO CANTINHO INFERIOR DIREITO
+st.markdown("""
+<div style="position: fixed; bottom: 15px; right: 20px; text-align: right; color: #9CA3AF; font-size: 12px; font-family: sans-serif; z-index: 999999; line-height: 1.4; background-color: rgba(14, 17, 23, 0.85); padding: 6px 12px; border-radius: 6px; border: 1px solid #2E364A;">
+    Desenvolvido por:<br>
+    <strong style="color: #60A5FA; font-size: 13px;">Nathan Wenzel</strong>
+</div>
+""", unsafe_allow_html=True)
+
 # 🔒 CONFIGURAÇÃO DA SENHA DE ACESSO
-SENHA_CORRETA = "deusa"
+SENHA_CORRETA = "18BPM2026"
 
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
@@ -58,9 +66,9 @@ if "autenticado" not in st.session_state:
 # Tela de Login
 if not st.session_state.autenticado:
     if os.path.exists("brasao.png"):
-        col1, col2, col3 = st.columns([1, 1, 1])
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.image("brasao.png", width=140)
+            st.image("brasao.png", width=130)
 
     st.title("🔒 Acesso Restrito — 18º BPM")
     st.write("Digite a senha de acesso para utilizar o Gerador de Relatórios Extrajornada.")
@@ -270,7 +278,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
 
 # Interface Principal
 if os.path.exists("brasao.png"):
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("brasao.png", width=120)
 
