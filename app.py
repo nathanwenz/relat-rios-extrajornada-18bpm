@@ -58,7 +58,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🔒 CONFIGURAÇÃO DA SENHA DE ACESSO
-SENHA_CORRETA = "deusa"
+SENHA_CORRETA = "18BPM2026"
 
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
@@ -190,7 +190,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for group_idx, (chaves, grupo) in enumerate(df.groupby(group_cols if group_cols else df.columns)):
-        primeiro = grupo.iloc
+        # CORREÇÃO AQUI: .iloc[0] para pegar a primeira linha da tabela
+        primeiro = grupo.iloc[0]
         
         volcher_raw = str(primeiro.get(col_v, "")).replace('.0', '').replace('None', '').replace('nan', '').strip() if col_v else ""
         volcher_val = volcher_raw if volcher_raw else str(group_idx + 1)
@@ -208,8 +209,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         table.autofit = False
 
         for row in table.rows:
-            row.cells.width = Inches(2.0)
-            row.cells.width = Inches(4.5)
+            row.cells[0].width = Inches(2.0)
+            row.cells[1].width = Inches(4.5)
 
         campos = [
             ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}"),
@@ -221,8 +222,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         for i, (label, val) in enumerate(campos):
             r = table.rows[i]
             
-            c0 = r.cells
-            p0 = c0.paragraphs
+            c0 = r.cells[0]
+            p0 = c0.paragraphs[0]
             p0.paragraph_format.space_after = Pt(2)
             p0.paragraph_format.space_before = Pt(2)
             r0 = p0.add_run(label)
@@ -231,8 +232,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r0.font.size = Pt(10)
             set_cell_background(c0, "D9E1F2")
 
-            c1 = r.cells
-            p1 = c1.paragraphs
+            c1 = r.cells[1]
+            p1 = c1.paragraphs[0]
             p1.paragraph_format.space_after = Pt(2)
             p1.paragraph_format.space_before = Pt(2)
             r1 = p1.add_run(val)
@@ -241,11 +242,11 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r1.font.size = Pt(10)
             set_cell_background(c1, "FFFFFF")
 
-        r4 = table.rows
-        c0 = r4.cells
-        c1 = r4.cells
+        r4 = table.rows[4]
+        c0 = r4.cells[0]
+        c1 = r4.cells[1]
         c0.merge(c1)
-        p_obs_tbl = c0.paragraphs
+        p_obs_tbl = c0.paragraphs[0]
         p_obs_tbl.paragraph_format.space_after = Pt(3)
         p_obs_tbl.paragraph_format.space_before = Pt(3)
         p_obs_tbl.paragraph_format.line_spacing = 1.15
@@ -304,5 +305,3 @@ if arquivo:
         if st.button("Gerar Documento Word"):
             docx_bytes = gerar_relatorio_word(df, data_cabecalho)
             st.download_button("📥 Baixar Relatório Preenchido (.docx)", docx_bytes, "RELATORIO_EXTRAJORNADA.docx")
-    else:
-        st.error("Não foi possível extrair dados da tabela. Verifique o arquivo enviado.")
