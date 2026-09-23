@@ -88,7 +88,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for chaves, grupo in df.groupby(group_cols if group_cols else df.columns):
-        primeiro = grupo.iloc
+        # Correção da linha que gerava o erro
+        primeiro = grupo.iloc[0]
         
         volcher_val = str(primeiro.get(col_v, "")).strip() if col_v else ""
         cidade_val = str(primeiro.get(col_c, "")).strip() if col_c else ""
@@ -111,17 +112,24 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
 
         for i, (label, val) in enumerate(campos):
             r = table.rows[i]
-            r.cells.paragraphs.add_run(label).bold = True
-            r.cells.paragraphs.add_run(val)
-            set_cell_background(r.cells, "E9EEF4")
-            set_cell_background(r.cells, "F8FAFC")
+            
+            p0 = r.cells[0].paragraphs[0]
+            p0.add_run(label).bold = True
+            
+            p1 = r.cells[1].paragraphs[0]
+            p1.add_run(val)
+            
+            set_cell_background(r.cells[0], "E9EEF4")
+            set_cell_background(r.cells[1], "F8FAFC")
 
         # Texto fixo de observação simplificado
         r4 = table.rows[4]
-        c_m = r4.cells
-        c_m.merge(r4.cells)
-        c_m.paragraphs.add_run("A equipe ficará a Disposição do COPOM e CPU ou Adjunto. | SISGCOP 61076")
-        set_cell_background(c_m, "FAFAFA")
+        c0 = r4.cells[0]
+        c1 = r4.cells[1]
+        c0.merge(c1)
+        p_obs_tbl = c0.paragraphs[0]
+        p_obs_tbl.text = "A equipe ficará a Disposição do COPOM e CPU ou Adjunto. | SISGCOP 61076"
+        set_cell_background(c0, "FAFAFA")
 
         doc.add_paragraph()
 
@@ -153,3 +161,4 @@ if arquivo:
             st.download_button("📥 Baixar Relatório Preenchido (.docx)", docx_bytes, "RELATORIO_EXTRAJORNADA.docx")
     else:
         st.error("Não foi possível extrair dados da tabela. Verifique o arquivo enviado.")
+Role a página e clique no botão verde "Commit changes".
