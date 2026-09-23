@@ -67,7 +67,7 @@ if "autenticado" not in st.session_state:
 # Tela de Login
 if not st.session_state.autenticado:
     if os.path.exists("brasao.png"):
-        col1, col2, col3 = st.columns()
+        col1, col2, col3 = st.columns(3)
         with col2:
             st.image("brasao.png", width=130)
 
@@ -105,11 +105,12 @@ def formatar_data_para_tela_inicial(val_str):
     if not val_str or str(val_str).strip().lower() in ['none', 'nan', '']:
         return "23 de setembro de 2026 (quarta-feira)"
     
-    val_clean = str(val_str).strip().split(' ')
+    # Pega apenas o texto limpo da data (evita passar lista para o strptime)
+    s = str(val_str).strip().split()[0]
     
     for fmt in ["%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%d/%m/%y"]:
         try:
-            dt = datetime.strptime(val_clean, fmt)
+            dt = datetime.strptime(s, fmt)
             dia = dt.day
             mes = MESES[dt.month]
             ano = dt.year
@@ -223,7 +224,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for group_idx, (chaves, grupo) in enumerate(df.groupby(group_cols if group_cols else df.columns)):
-        primeiro = grupo.iloc
+        primeiro = grupo.iloc[0]
         
         volcher_raw = str(primeiro.get(col_v, "")).replace('.0', '').replace('None', '').replace('nan', '').strip() if col_v else ""
         volcher_val = volcher_raw if volcher_raw else str(group_idx + 1)
@@ -241,8 +242,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         table.autofit = False
 
         for row in table.rows:
-            row.cells.width = Inches(2.0)
-            row.cells.width = Inches(4.5)
+            row.cells[0].width = Inches(2.0)
+            row.cells[1].width = Inches(4.5)
 
         campos = [
             ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}"),
@@ -254,8 +255,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         for i, (label, val) in enumerate(campos):
             r = table.rows[i]
             
-            c0 = r.cells
-            p0 = c0.paragraphs
+            c0 = r.cells[0]
+            p0 = c0.paragraphs[0]
             p0.paragraph_format.space_after = Pt(2)
             p0.paragraph_format.space_before = Pt(2)
             r0 = p0.add_run(label)
@@ -264,8 +265,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r0.font.size = Pt(10)
             set_cell_background(c0, "D9E1F2")
 
-            c1 = r.cells
-            p1 = c1.paragraphs
+            c1 = r.cells[1]
+            p1 = c1.paragraphs[0]
             p1.paragraph_format.space_after = Pt(2)
             p1.paragraph_format.space_before = Pt(2)
             r1 = p1.add_run(val)
@@ -275,11 +276,11 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             set_cell_background(c1, "FFFFFF")
 
         # Quadro de observações sem amarelo
-        r4 = table.rows
-        c0 = r4.cells
-        c1 = r4.cells
+        r4 = table.rows[4]
+        c0 = r4.cells[0]
+        c1 = r4.cells[1]
         c0.merge(c1)
-        p_obs_tbl = c0.paragraphs
+        p_obs_tbl = c0.paragraphs[0]
         p_obs_tbl.paragraph_format.space_after = Pt(3)
         p_obs_tbl.paragraph_format.space_before = Pt(3)
         p_obs_tbl.paragraph_format.line_spacing = 1.15
@@ -312,7 +313,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
 
 # Interface Principal
 if os.path.exists("brasao.png"):
-    col1, col2, col3 = st.columns()
+    col1, col2, col3 = st.columns(3)
     with col2:
         st.image("brasao.png", width=120)
 
