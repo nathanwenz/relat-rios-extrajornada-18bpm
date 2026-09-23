@@ -60,35 +60,51 @@ def processar_dataframe(df):
 def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta-feira)"):
     doc = Document()
 
+    # Configuração de Margens
     for section in doc.sections:
         section.top_margin = Inches(0.6)
         section.bottom_margin = Inches(0.6)
         section.left_margin = Inches(0.7)
         section.right_margin = Inches(0.7)
 
-    # Cabeçalho Institucional
+    # 1. Cabeçalho Institucional Oficial PM
     p_hdr = doc.add_paragraph()
     p_hdr.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r1 = p_hdr.add_run("ESTADO DO PARANÁ POLÍCIA MILITAR\n2º COMANDO REGIONAL DE POLÍCIA MILITAR\n18° BATALHÃO DE POLÍCIA MILITAR\n")
-    r1.bold = True
+    p_hdr.paragraph_format.space_after = Pt(2)
+    p_hdr.paragraph_format.line_spacing = 1.15
     
-    r2 = p_hdr.add_run("PROGRAMAÇÃO EXTRAJORNADA VOLUNTÁRIA\n")
-    r2.bold = True
-    r2.font.color.rgb = RGBColor(0, 32, 96)
+    r_estado = p_hdr.add_run("ESTADO DO PARANÁ\nPOLÍCIA MILITAR\n2º COMANDO REGIONAL DE POLÍCIA MILITAR\n18° BATALHÃO DE POLÍCIA MILITAR\n")
+    r_estado.bold = True
+    r_estado.font.size = Pt(11)
+    r_estado.font.name = "Arial"
+    
+    r_prog = p_hdr.add_run("PROGRAMAÇÃO EXTRAJORNADA VOLUNTÁRIA\n")
+    r_prog.bold = True
+    r_prog.font.size = Pt(12)
+    r_prog.font.name = "Arial"
+    r_prog.font.color.rgb = RGBColor(0, 32, 96) # Azul Escuro PM
 
     p_data = doc.add_paragraph()
     p_data.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_data.add_run(data_extenso).bold = True
+    p_data.paragraph_format.space_after = Pt(6)
+    r_dt = p_data.add_run(data_extenso)
+    r_dt.bold = True
+    r_dt.font.size = Pt(11)
+    r_dt.font.name = "Arial"
 
     p_obs = doc.add_paragraph()
-    p_obs.add_run("* As equipes ficarão à disposição do CPU, Adjunto e COPOM para atendimentos de ocorrências. Na ausência de ocorrências, deverão seguir o cartão de programa.").italic = True
+    p_obs.paragraph_format.space_after = Pt(12)
+    r_obs = p_obs.add_run("* As equipes ficarão à disposição do CPU, Adjunto e COPOM para atendimentos de ocorrências. Na ausência de ocorrências, deverão seguir o cartão de programa.")
+    r_obs.italic = True
+    r_obs.font.size = Pt(9.5)
+    r_obs.font.name = "Arial"
 
     df, col_v, col_c, col_d, col_h = processar_dataframe(df_escala)
 
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for group_idx, (chaves, grupo) in enumerate(df.groupby(group_cols if group_cols else df.columns)):
-        primeiro = grupo.iloc[0]
+        primeiro = grupo.iloc
         
         volcher_raw = str(primeiro.get(col_v, "")).replace('.0', '').replace('None', '').replace('nan', '').strip() if col_v else ""
         volcher_val = volcher_raw if volcher_raw else str(group_idx + 1)
@@ -103,36 +119,63 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         table = doc.add_table(rows=5, cols=2)
         table.style = 'Table Grid'
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        
+        table.autofit = False
+
+        for row in table.rows:
+            row.cells.width = Inches(2.0)
+            row.cells[1].width = Inches(4.5)
+
         campos = [
-            ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}"),
-            ("DATA", data_str),
-            ("LOCAL", cidade_val),
-            ("HORÁRIO", hora_str)
+            ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}", True), # Destacado em Amarelo
+            ("DATA", data_str, False),
+            ("LOCAL", cidade_val, True), # Destacado em Amarelo
+            ("HORÁRIO", hora_str, False)
         ]
 
-        for i, (label, val) in enumerate(campos):
+        for i, (label, val, highlighted) in enumerate(campos):
             r = table.rows[i]
             
-            p0 = r.cells[0].paragraphs[0]
-            p0.add_run(label).bold = True
+            # Célula Rótulo (Azul Claro PM)
+            c0 = r.cells
+            p0 = c0.paragraphs
+            p0.paragraph_format.space_after = Pt(2)
+            p0.paragraph_format.space_before = Pt(2)
+            r0 = p0.add_run(label)
+            r0.bold = True
+            r0.font.name = "Arial"
+            r0.font.size = Pt(10)
+            set_cell_background(c0, "D9E1F2")
+
+            # Célula Valor (Amarelo Grifado ou Branco)
+            c1 = r.cells[1]
+            p1 = c1.paragraphs
+            p1.paragraph_format.space_after = Pt(2)
+            p1.paragraph_format.space_before = Pt(2)
+            r1 = p1.add_run(val)
+            r1.bold = True if highlighted else False
+            r1.font.name = "Arial"
+            r1.font.size = Pt(10)
             
-            p1 = r.cells[1].paragraphs[0]
-            p1.add_run(val)
-            
-            set_cell_background(r.cells[0], "E9EEF4")
-            set_cell_background(r.cells[1], "F8FAFC")
+            if highlighted:
+                set_cell_background(c1, "FFFF00") # Grifado Amarelo
+            else:
+                set_cell_background(c1, "FFFFFF")
 
         # Texto fixo de observação simplificado
-        r4 = table.rows[4]
-        c0 = r4.cells[0]
+        r4 = table.rows
+        c0 = r4.cells
         c1 = r4.cells[1]
         c0.merge(c1)
-        p_obs_tbl = c0.paragraphs[0]
-        p_obs_tbl.text = "A equipe ficará a Disposição do COPOM e CPU ou Adjunto. | SISGCOP 61076"
-        set_cell_background(c0, "FAFAFA")
+        p_obs_tbl = c0.paragraphs
+        p_obs_tbl.paragraph_format.space_after = Pt(3)
+        p_obs_tbl.paragraph_format.space_before = Pt(3)
+        r_obs_tbl = p_obs_tbl.add_run("A equipe ficará a Disposição do COPOM e CPU ou Adjunto. | SISGCOP 61076")
+        r_obs_tbl.bold = True
+        r_obs_tbl.font.name = "Arial"
+        r_obs_tbl.font.size = Pt(9)
+        set_cell_background(c0, "F2F2F2")
 
-        doc.add_paragraph()
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     buffer = io.BytesIO()
     doc.save(buffer)
