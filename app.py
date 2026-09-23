@@ -32,7 +32,7 @@ def ler_arquivo_pdf(file_bytes):
     header_idx = 0
     for idx, row in enumerate(data):
         row_str = " ".join(row).upper()
-        if "VOLCHER" in row_str or "VOUCHER" in row_str or "CIDADE" in row_str or "DATA" in row_str:
+        if "VOLCHER" in row_str or "VOUCHER" in row_str or "CIDADE" in row_str or "DATA" in row_str or "N°" in row_str:
             header_idx = idx
             break
             
@@ -50,7 +50,7 @@ def processar_dataframe(df):
                     return col_orig
         return None
 
-    col_volcher = encontrar_coluna(["VOLCHER", "VOUCHER"], cols)
+    col_volcher = encontrar_coluna(["VOLCHER", "VOUCHER", "VOLCHE", "VOUCHE", "N°", "Nº"], cols)
     col_cidade = encontrar_coluna(["CIDADE", "MUNICÍPIO", "LOCAL"], cols)
     col_data = encontrar_coluna(["DATA"], cols)
     col_hora = encontrar_coluna(["HORA"], cols)
@@ -87,11 +87,13 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
 
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
-    for chaves, grupo in df.groupby(group_cols if group_cols else df.columns):
+    for group_idx, (chaves, grupo) in enumerate(df.groupby(group_cols if group_cols else df.columns)):
         primeiro = grupo.iloc[0]
         
-        volcher_val = str(primeiro.get(col_v, "")).strip() if col_v else ""
-        cidade_val = str(primeiro.get(col_c, "")).strip() if col_c else ""
+        volcher_raw = str(primeiro.get(col_v, "")).replace('.0', '').replace('None', '').replace('nan', '').strip() if col_v else ""
+        volcher_val = volcher_raw if volcher_raw else str(group_idx + 1)
+        
+        cidade_val = str(primeiro.get(col_c, "")).replace('None', '').replace('nan', '').strip() if col_c else ""
         data_str = str(primeiro.get(col_d, "23/09/2026")).strip() if col_d else "23/09/2026"
         
         hora_str = str(primeiro.get(col_h, "18:00")).strip() if col_h else "18:00"
@@ -103,7 +105,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         
         campos = [
-            ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER {volcher_val}"),
+            ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}"),
             ("DATA", data_str),
             ("LOCAL", cidade_val),
             ("HORÁRIO", hora_str)
