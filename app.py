@@ -104,7 +104,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for group_idx, (chaves, grupo) in enumerate(df.groupby(group_cols if group_cols else df.columns)):
-        primeiro = grupo.iloc
+        # Correção exata: iloc[0] pega a primeira linha do grupo
+        primeiro = grupo.iloc[0]
         
         volcher_raw = str(primeiro.get(col_v, "")).replace('.0', '').replace('None', '').replace('nan', '').strip() if col_v else ""
         volcher_val = volcher_raw if volcher_raw else str(group_idx + 1)
@@ -122,7 +123,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         table.autofit = False
 
         for row in table.rows:
-            row.cells.width = Inches(2.0)
+            row.cells[0].width = Inches(2.0)
             row.cells[1].width = Inches(4.5)
 
         campos = [
@@ -136,8 +137,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r = table.rows[i]
             
             # Célula Rótulo (Azul Claro PM)
-            c0 = r.cells
-            p0 = c0.paragraphs
+            c0 = r.cells[0]
+            p0 = c0.paragraphs[0]
             p0.paragraph_format.space_after = Pt(2)
             p0.paragraph_format.space_before = Pt(2)
             r0 = p0.add_run(label)
@@ -148,7 +149,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
 
             # Célula Valor (Amarelo Grifado ou Branco)
             c1 = r.cells[1]
-            p1 = c1.paragraphs
+            p1 = c1.paragraphs[0]
             p1.paragraph_format.space_after = Pt(2)
             p1.paragraph_format.space_before = Pt(2)
             r1 = p1.add_run(val)
@@ -162,18 +163,18 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
                 set_cell_background(c1, "FFFFFF")
 
         # Texto fixo de observação simplificado
-        r4 = table.rows
-        c0 = r4.cells
+        r4 = table.rows[4]
+        c0 = r4.cells[0]
         c1 = r4.cells[1]
         c0.merge(c1)
-        p_obs_tbl = c0.paragraphs
+        p_obs_tbl = c0.paragraphs[0]
         p_obs_tbl.paragraph_format.space_after = Pt(3)
         p_obs_tbl.paragraph_format.space_before = Pt(3)
         r_obs_tbl = p_obs_tbl.add_run("A equipe ficará a Disposição do COPOM e CPU ou Adjunto. | SISGCOP 61076")
         r_obs_tbl.bold = True
         r_obs_tbl.font.name = "Arial"
         r_obs_tbl.font.size = Pt(9)
-        set_cell_background(c0, "F2F2F2")
+        set_cell_background(c0, "FAFAFA")
 
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
