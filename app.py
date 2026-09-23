@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_COLOR_INDEX
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -146,7 +146,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r0.font.size = Pt(10)
             set_cell_background(c0, "D9E1F2")
 
-            # Célula Valor (Branco sem grifado)
+            # Célula Valor (Branco limpo, sem amarelo)
             c1 = r.cells[1]
             p1 = c1.paragraphs[0]
             p1.paragraph_format.space_after = Pt(2)
@@ -157,7 +157,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r1.font.size = Pt(10)
             set_cell_background(c1, "FFFFFF")
 
-        # Texto fixo de observação com os tópicos solicitados
+        # Texto de observação sem marcas em amarelo
         r4 = table.rows[4]
         c0 = r4.cells[0]
         c1 = r4.cells[1]
@@ -183,7 +183,6 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         r_l4 = p_obs_tbl.add_run("    • A equipe além realizar o atendimento de ocorrências, deverá realizar o Patrulhamento Ostensivo e Preventivo na área designada para atuar.")
         r_l4.font.name = "Arial"
         r_l4.font.size = Pt(9.5)
-        r_l4.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
         set_cell_background(c0, "FAFAFA")
 
