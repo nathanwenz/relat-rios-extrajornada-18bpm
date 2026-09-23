@@ -7,17 +7,61 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 import io
+import os
 import pdfplumber
 
-# 🔒 CONFIGURAÇÃO DA SENHA DE ACESSO (Altere aqui se desejar)
-SENHA_CORRETA = "deusa"
+# Configuração da página e tema
+st.set_page_config(page_title="18º BPM — Extrajornada", page_icon="🛡️", layout="centered")
 
-# Controle de sessão do usuário
+# 🎨 MODO ESCURO (CSS Personalizado)
+st.markdown("""
+<style>
+    /* Fundo Escuro */
+    .stApp {
+        background-color: #0E1117;
+        color: #E0E6ED;
+    }
+    /* Estilização dos Containers e Caixas */
+    div[data-testid="stFileUploader"], div[data-testid="stTextInput"] {
+        background-color: #1E222D;
+        border-radius: 10px;
+        padding: 10px;
+        border: 1px solid #2E364A;
+    }
+    /* Botões operacionais */
+    .stButton>button {
+        background-color: #002060;
+        color: #FFFFFF;
+        font-weight: bold;
+        border-radius: 8px;
+        border: 1px solid #1E3A8A;
+        width: 100%;
+        padding: 10px;
+    }
+    .stButton>button:hover {
+        background-color: #1E40AF;
+        border-color: #3B82F6;
+    }
+    /* Títulos */
+    h1, h2, h3 {
+        color: #F3F4F6 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 🔒 CONFIGURAÇÃO DA SENHA DE ACESSO
+SENHA_CORRETA = "18BPM2026"
+
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
-# Tela de Login caso o usuário não esteja autenticado
+# Tela de Login
 if not st.session_state.autenticado:
+    if os.path.exists("brasao.png"):
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            st.image("brasao.png", width=140)
+
     st.title("🔒 Acesso Restrito — 18º BPM")
     st.write("Digite a senha de acesso para utilizar o Gerador de Relatórios Extrajornada.")
     
@@ -33,7 +77,7 @@ if not st.session_state.autenticado:
     st.stop()
 
 # =========================================================
-# CÓDIGO DO SISTEMA (Liberado apenas após a senha)
+# FUNÇÕES DO SISTEMA
 # =========================================================
 
 def set_cell_background(cell, hex_color):
@@ -93,7 +137,15 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         section.left_margin = Inches(0.7)
         section.right_margin = Inches(0.7)
 
-    # 1. Cabeçalho Institucional Oficial PM
+    # Inserção do Brasão no Documento Word (se o arquivo existir)
+    if os.path.exists("brasao.png"):
+        p_img = doc.add_paragraph()
+        p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img.paragraph_format.space_after = Pt(4)
+        run_img = p_img.add_run()
+        run_img.add_picture("brasao.png", width=Inches(0.9))
+
+    # Cabeçalho Institucional Oficial PM
     p_hdr = doc.add_paragraph()
     p_hdr.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_hdr.paragraph_format.space_after = Pt(2)
@@ -130,7 +182,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     group_cols = [c for c in [col_v, col_c] if c is not None]
     
     for group_idx, (chaves, grupo) in enumerate(df.groupby(group_cols if group_cols else df.columns)):
-        primeiro = grupo.iloc[0]
+        primeiro = grupo.iloc
         
         volcher_raw = str(primeiro.get(col_v, "")).replace('.0', '').replace('None', '').replace('nan', '').strip() if col_v else ""
         volcher_val = volcher_raw if volcher_raw else str(group_idx + 1)
@@ -148,8 +200,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         table.autofit = False
 
         for row in table.rows:
-            row.cells[0].width = Inches(2.0)
-            row.cells[1].width = Inches(4.5)
+            row.cells.width = Inches(2.0)
+            row.cells.width = Inches(4.5)
 
         campos = [
             ("CIDADE/VOLCHER", f"{cidade_val} - VOLCHER - {volcher_val}"),
@@ -161,8 +213,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         for i, (label, val) in enumerate(campos):
             r = table.rows[i]
             
-            c0 = r.cells[0]
-            p0 = c0.paragraphs[0]
+            c0 = r.cells
+            p0 = c0.paragraphs
             p0.paragraph_format.space_after = Pt(2)
             p0.paragraph_format.space_before = Pt(2)
             r0 = p0.add_run(label)
@@ -171,8 +223,8 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r0.font.size = Pt(10)
             set_cell_background(c0, "D9E1F2")
 
-            c1 = r.cells[1]
-            p1 = c1.paragraphs[0]
+            c1 = r.cells
+            p1 = c1.paragraphs
             p1.paragraph_format.space_after = Pt(2)
             p1.paragraph_format.space_before = Pt(2)
             r1 = p1.add_run(val)
@@ -181,11 +233,11 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r1.font.size = Pt(10)
             set_cell_background(c1, "FFFFFF")
 
-        r4 = table.rows[4]
-        c0 = r4.cells[0]
-        c1 = r4.cells[1]
+        r4 = table.rows
+        c0 = r4.cells
+        c1 = r4.cells
         c0.merge(c1)
-        p_obs_tbl = c0.paragraphs[0]
+        p_obs_tbl = c0.paragraphs
         p_obs_tbl.paragraph_format.space_after = Pt(3)
         p_obs_tbl.paragraph_format.space_before = Pt(3)
         p_obs_tbl.paragraph_format.line_spacing = 1.15
@@ -217,7 +269,13 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     return buffer
 
 # Interface Principal
-st.title("🛡️ Gerador de Relatório Extrajornada PM")
+if os.path.exists("brasao.png"):
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        st.image("brasao.png", width=120)
+
+st.title("🛡️ Gerador de Relatório Extrajornada")
+st.caption("18º Batalhão de Polícia Militar — PMPR")
 st.write("Envie a tabela da escala em **.pdf**, **.xlsx** ou **.csv**.")
 
 arquivo = st.file_uploader("Envie o arquivo da escala", type=["xlsx", "csv", "pdf"])
