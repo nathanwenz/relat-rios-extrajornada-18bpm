@@ -50,26 +50,35 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🏷️ ASSINATURA NO CANTINHO INFERIOR DIREITO
+# 🏷️ ASSINATURA MOVIDA PARA A ESQUERDA (Evita sobreposição com 'Manage app')
 st.markdown("""
-<div style="position: fixed; bottom: 15px; right: 20px; text-align: right; color: #9CA3AF; font-size: 12px; font-family: sans-serif; z-index: 999999; line-height: 1.4; background-color: rgba(14, 17, 23, 0.85); padding: 6px 12px; border-radius: 6px; border: 1px solid #2E364A;">
+<div style="position: fixed; bottom: 15px; right: 140px; text-align: right; color: #9CA3AF; font-size: 12px; font-family: sans-serif; z-index: 999999; line-height: 1.4; background-color: rgba(14, 17, 23, 0.9); padding: 6px 12px; border-radius: 6px; border: 1px solid #2E364A;">
     Desenvolvido por:<br>
     <strong style="color: #60A5FA; font-size: 13px;">Nathan Wenzel</strong>
 </div>
 """, unsafe_allow_html=True)
 
 # 🔒 CONFIGURAÇÃO DA SENHA DE ACESSO
-SENHA_CORRETA = "deusa"
+SENHA_CORRETA = "18BPM2026"
 
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
+# Busca flexível da imagem do brasão
+def obter_caminho_brasao():
+    for nome in ["brasao.png", "brasao.PNG", "Brasao.png", "BRASAO.PNG", "brasao.jpg", "brasao.jpeg"]:
+        if os.path.exists(nome):
+            return nome
+    return None
+
+caminho_brasao = obter_caminho_brasao()
+
 # Tela de Login
 if not st.session_state.autenticado:
-    if os.path.exists("brasao.png"):
+    if caminho_brasao:
         col1, col2, col3 = st.columns(3)
         with col2:
-            st.image("brasao.png", width=130)
+            st.image(caminho_brasao, width=130)
 
     st.title("🔒 Acesso Restrito — 18º BPM")
     st.write("Digite a senha de acesso para utilizar o Gerador de Relatórios Extrajornada.")
@@ -101,11 +110,11 @@ MESES = {
 }
 
 def formatar_data_para_tela_inicial(val_str):
-    """Converte '23/09/2026' para '23 de setembro de 2026 (quarta-feira)' APENAS para a caixa da tela inicial"""
     if not val_str or str(val_str).strip().lower() in ['none', 'nan', '']:
         return "23 de setembro de 2026 (quarta-feira)"
     
-    s = str(val_str).strip().split()[0] if str(val_str).strip().split() else ""
+    parts = str(val_str).strip().split()
+    s = parts[0] if parts else ""
     
     for fmt in ["%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%d/%m/%y"]:
         try:
@@ -121,7 +130,6 @@ def formatar_data_para_tela_inicial(val_str):
     return str(val_str).strip()
 
 def verificar_cidade_segura(file_bytes, ext, df):
-    """Verifica se a expressão CIDADE SEGURA aparece no PDF ou na tabela"""
     if ext == "pdf" and file_bytes is not None:
         try:
             file_bytes.seek(0)
@@ -192,7 +200,6 @@ def processar_dataframe(df):
     return df, col_volcher, col_cidade, col_data, col_hora
 
 def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta-feira)", e_cidade_segura=False):
-    """Gera o documento Word exatamente igual ao modelo v8 aprovado, com inclusão opcional de CIDADE SEGURA no cabeçalho"""
     doc = Document()
 
     for section in doc.sections:
@@ -201,15 +208,14 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
         section.left_margin = Inches(0.7)
         section.right_margin = Inches(0.7)
 
-    # Inserção do Brasão no Documento Word (se existir)
-    if os.path.exists("brasao.png"):
+    caminho_img = obter_caminho_brasao()
+    if caminho_img:
         p_img = doc.add_paragraph()
         p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_img.paragraph_format.space_after = Pt(4)
         run_img = p_img.add_run()
-        run_img.add_picture("brasao.png", width=Inches(0.9))
+        run_img.add_picture(caminho_img, width=Inches(0.9))
 
-    # Cabeçalho Institucional Oficial PM
     p_hdr = doc.add_paragraph()
     p_hdr.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_hdr.paragraph_format.space_after = Pt(2)
@@ -226,7 +232,6 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     r_prog.font.name = "Arial"
     r_prog.font.color.rgb = RGBColor(0, 32, 96)
 
-    # Inclusão da linha CIDADE SEGURA caso identificado no arquivo
     if e_cidade_segura:
         r_cs = p_hdr.add_run("CIDADE SEGURA\n")
         r_cs.bold = True
@@ -305,7 +310,7 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
             r1.font.size = Pt(10)
             set_cell_background(c1, "FFFFFF")
 
-        # Quadro de observações sem amarelo
+        # Quadro de observações
         r4 = table.rows[4]
         c0 = r4.cells[0]
         c1 = r4.cells[1]
@@ -342,10 +347,10 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     return buffer
 
 # Interface Principal
-if os.path.exists("brasao.png"):
+if caminho_brasao:
     col1, col2, col3 = st.columns(3)
     with col2:
-        st.image("brasao.png", width=120)
+        st.image(caminho_brasao, width=120)
 
 st.title("🛡️ Gerador de Relatório Extrajornada")
 st.caption("18º Batalhão de Polícia Militar — PMPR")
@@ -365,12 +370,10 @@ if arquivo:
     if not df.empty:
         st.success(f"Arquivo carregado com sucesso! {len(df)} registros encontrados.")
         
-        # 🔍 Identificação de "CIDADE SEGURA"
         e_cidade_segura = verificar_cidade_segura(arquivo, ext, df)
         if e_cidade_segura:
             st.info("ℹ️ Operação 'CIDADE SEGURA' identificada no arquivo. O cabeçalho do relatório incluirá este destaque.")
 
-        # Sugestão inteligente de data APENAS para preenchimento da caixinha na tela inicial
         _, _, _, col_d, _ = processar_dataframe(df)
         data_sugerida_tela = "23 de setembro de 2026 (quarta-feira)"
         if col_d and not df[col_d].dropna().empty:
