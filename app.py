@@ -59,7 +59,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🔒 CONFIGURAÇÃO DA SENHA DE ACESSO
-SENHA_CORRETA = "deusa"
+SENHA_CORRETA = "18BPM2026"
 
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
@@ -105,8 +105,7 @@ def formatar_data_para_tela_inicial(val_str):
     if not val_str or str(val_str).strip().lower() in ['none', 'nan', '']:
         return "23 de setembro de 2026 (quarta-feira)"
     
-    # Pega apenas o texto limpo da data (evita passar lista para o strptime)
-    s = str(val_str).strip().split()[0]
+    s = str(val_str).strip().split()[0] if str(val_str).strip().split() else ""
     
     for fmt in ["%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%d/%m/%y"]:
         try:
@@ -121,6 +120,28 @@ def formatar_data_para_tela_inicial(val_str):
             
     return str(val_str).strip()
 
+def verificar_cidade_segura(file_bytes, ext, df):
+    """Verifica se a expressão CIDADE SEGURA aparece no PDF ou na tabela"""
+    if ext == "pdf" and file_bytes is not None:
+        try:
+            file_bytes.seek(0)
+            with pdfplumber.open(file_bytes) as pdf:
+                for page in pdf.pages:
+                    txt = page.extract_text() or ""
+                    if "CIDADE SEGURA" in txt.upper():
+                        file_bytes.seek(0)
+                        return True
+            file_bytes.seek(0)
+        except Exception:
+            pass
+    
+    if df is not None and not df.empty:
+        df_str = " ".join([str(c) for c in df.columns]) + " " + " ".join([str(v) for v in df.values.flatten()])
+        if "CIDADE SEGURA" in df_str.upper():
+            return True
+
+    return False
+
 def set_cell_background(cell, hex_color):
     tcPr = cell._tc.get_or_add_tcPr()
     shd = OxmlElement('w:shd')
@@ -130,6 +151,7 @@ def set_cell_background(cell, hex_color):
 
 def ler_arquivo_pdf(file_bytes):
     data = []
+    file_bytes.seek(0)
     with pdfplumber.open(file_bytes) as pdf:
         for page in pdf.pages:
             tables = page.extract_tables()
@@ -169,8 +191,8 @@ def processar_dataframe(df):
 
     return df, col_volcher, col_cidade, col_data, col_hora
 
-def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta-feira)"):
-    """Gera o documento Word exatamente igual ao modelo v8 aprovado"""
+def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta-feira)", e_cidade_segura=False):
+    """Gera o documento Word exatamente igual ao modelo v8 aprovado, com inclusão opcional de CIDADE SEGURA no cabeçalho"""
     doc = Document()
 
     for section in doc.sections:
@@ -203,6 +225,14 @@ def gerar_relatorio_word(df_escala, data_extenso="23 de setembro de 2026 (quarta
     r_prog.font.size = Pt(12)
     r_prog.font.name = "Arial"
     r_prog.font.color.rgb = RGBColor(0, 32, 96)
+
+    # Inclusão da linha CIDADE SEGURA caso identificado no arquivo
+    if e_cidade_segura:
+        r_cs = p_hdr.add_run("CIDADE SEGURA\n")
+        r_cs.bold = True
+        r_cs.font.size = Pt(12)
+        r_cs.font.name = "Arial"
+        r_cs.font.color.rgb = RGBColor(0, 32, 96)
 
     p_data = doc.add_paragraph()
     p_data.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -335,6 +365,11 @@ if arquivo:
     if not df.empty:
         st.success(f"Arquivo carregado com sucesso! {len(df)} registros encontrados.")
         
+        # 🔍 Identificação de "CIDADE SEGURA"
+        e_cidade_segura = verificar_cidade_segura(arquivo, ext, df)
+        if e_cidade_segura:
+            st.info("ℹ️ Operação 'CIDADE SEGURA' identificada no arquivo. O cabeçalho do relatório incluirá este destaque.")
+
         # Sugestão inteligente de data APENAS para preenchimento da caixinha na tela inicial
         _, _, _, col_d, _ = processar_dataframe(df)
         data_sugerida_tela = "23 de setembro de 2026 (quarta-feira)"
@@ -345,7 +380,7 @@ if arquivo:
         data_cabecalho = st.text_input("Data para o cabeçalho do relatório", value=data_sugerida_tela)
         
         if st.button("Gerar Documento Word"):
-            docx_bytes = gerar_relatorio_word(df, data_cabecalho)
+            docx_bytes = gerar_relatorio_word(df, data_cabecalho, e_cidade_segura)
             st.download_button("📥 Baixar Relatório Preenchido (.docx)", docx_bytes, "RELATORIO_EXTRAJORNADA.docx")
     else:
         st.error("Não foi possível extrair dados da tabela. Verifique o arquivo enviado.")
